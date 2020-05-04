@@ -1,0 +1,281 @@
+
+---
+title: "ATLANTIC STATES MARINE FISHERIES COMMISSION  \n 2019 Horseshoe Crab Compliance
+  Report - RHODE ISLAND"
+author: 'Submitted by: Natalie Ameral RI DMF'
+date: "May 8, 2020"
+output:
+  pdf_document: default
+  word_document:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tinytex)
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(janitor)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+```
+```{r Intro Data, include=FALSE}
+##Import All landings data
+HSC_land = read.csv("all_HSC_data_final.csv", header=TRUE)
+names(HSC_land)=c("Permit","Date","Month","Year","Harvest","Count","Sex")
+##Import license information for previous year
+HSC_Lic = read.csv("HSC_2019_Permits_final.csv", header=TRUE)
+total_lic = length(unique(HSC_Lic$HSC.Permit.Number)) 
+##landings data 2018
+land_2018=subset(HSC_land, Year=="2018" & Count>="1")
+active_bait_2018=land_2018 %>% 
+    filter(Harvest=="Bait")
+    active_bait_2018=length(unique(active_bait_2018$Permit)) #I couldn't get this to pipe
+active_biomed_2018=land_2018 %>% 
+    filter(Harvest=="Bio-Med")
+   active_biomed_2018=length(unique(active_biomed_2018$Permit))
+total_bait_2018=land_2018 %>%
+    filter(Harvest=="Bait") %>%
+    pull(Count)%>%
+    sum()
+total_bio_2018=land_2018 %>%
+    filter(Harvest=="Bio-Med") %>%
+    pull(Count)%>%
+    sum()
+##landings data 2019
+land_2019=subset(HSC_land, Year=="2019" & Count>="1")
+active_bait_2019=land_2019 %>% 
+    filter(Harvest=="Bait")
+    active_bait_2019=length(unique(active_bait_2019$Permit)) #I couldn't get this to pipe
+active_biomed_2019=land_2019 %>% 
+    filter(Harvest=="Bio-Med")
+    active_biomed_2019=length(unique(active_biomed_2019$Permit))
+total_bait_2019=land_2019 %>%
+    filter(Harvest=="Bait") %>%
+    pull(Count)%>%
+    sum()
+total_bio_2019=land_2019 %>%
+    filter(Harvest=="Bio-Med") %>%
+    pull(Count)%>%
+    sum()
+
+bait_inc=as.integer(round(((total_bait_2019-total_bait_2018)/total_bait_2018)*100))
+bio_inc=as.integer(round(((total_bio_2019-total_bio_2018)/total_bio_2018)*100))
+# I could not get the dang % sign to change color, I am assuming it has something to do with the meaning of the % sign in the latex world     
+```
+### **I. Introduction**
+
+In stark contrast to previous years where biomedical data proved to be the only confidential matter for the state of Rhode Island, 2019 marks the addition of bait harvest data to the confidential repository. In 2019, a total of `r total_lic` licenses were issued. Of those licenses, `r active_bait_2019` were used for bait harvest and only `r active_biomed_2019` were used for biomedical harvest. Comparing 2018 to 2019, same number of bait permits were active in while the biomedical industry lost two particpants in 2019. \textcolor{red}{The bait fishery experienced an increase in harvest of `r bait_inc` percent between 2018 and 2019. Although a decrease in harvest may have been expected with a decrease in active licenses, the total number of biomedical crabs landed in 2019 increased by `r bio_inc` percent compared to 2018.}
+
+
+NO CHANGES IN REGULATION HAVE OCCURED SINCE 2017
+
+### **II. Request for *de minimus*, where applicable**
+  
+NA
+
+### **III. Previous Calendar Year's Fishery**
+```{r Bait Table Data Setup, Include = FALSE}
+#Bait_Data_Zero_Inc = subset(HSC_land, Year=="2019" & Harvest=="Bait" & Count>="1")
+Bait_Table= subset(HSC_land, Year=="2019" & Harvest=="Bait" & Count>="1") 
+Bait_Table= aggregate(Count ~ Month + Sex,FUN=sum, Bait_Table) %>%
+  pivot_wider(names_from = Month,
+              values_from = Count) %>%
+  adorn_totals("row") %>%
+  adorn_totals("col")
+Bait_Table=Bait_Table[c(1,2,3,6,4,5,7)]
+Bait_Table[is.na(Bait_Table)]=0
+
+```
+```{r Catch by gear table and data setup, Include=FALSE}
+#Import previous year's catch reports from SAFIS
+catch_safis=read.csv("HSC_catch_safis_final.csv",header=TRUE)
+catch_safis=catch_safis %>%
+  filter(Disposition=="Bait")
+  catch_safis$Reported.Qty=as.numeric(catch_safis$Reported.Qty)
+catch_safis= aggregate(Reported.Qty ~ Gear,FUN=sum, catch_safis)
+##Total crabs reported in safis
+safis_bait_2019=sum(catch_safis$Reported.Qty)
+##Percent of crabs reported on safis
+percent_reported=round((safis_bait_2019/total_bait_2019)*100)
+##Percent of crabs reported "BY HAND"
+percent_by_hand = round((catch_safis$Reported.Qty[1]/safis_bait_2019)*100)
+##Percent of crabs reported "trawl"
+percent__trawl = round((catch_safis$Reported.Qty[2]/safis_bait_2019)*100)
+##Percent of crabs reported "pots and traps"
+percent_pots = round((catch_safis$Reported.Qty[3]/safis_bait_2019)*100)
+##Create vector applying percentages to crabs reported from hsc land
+crabs_by_percent=as.integer(c(
+  (total_bait_2019*.94),
+  (total_bait_2019*.03),
+  (total_bait_2019*.03)
+))
+gear_column_names=c(
+  "By Hand 94%",
+  "Otter Trawl 3%",
+  "Pots and Traps 3%"
+)
+#Table setup
+gear_table=data.frame(gear_column_names,crabs_by_percent)
+gear_table=gear_table %>%
+  pivot_wider(names_from = gear_column_names,
+    values_from = crabs_by_percent)%>%
+  mutate(" "="Count of Crabs")%>%
+  select(4,1,2,3)
+```
+a. \textcolor{red}{Bait Fishery Performance 2019}
+
+```{r Bait Table Formatting, echo=FALSE}
+#knitr::kable(Bait_Table)     
+kable(Bait_Table, "latex", booktabs=T, caption=" BAIT UNITS REPORTED 2019 (COUNT)")%>%
+  ##I couldn't get the year to print using an r command
+  kable_styling(position="center")%>%
+  kable_styling(latex_options = "hold_position")%>%
+  column_spec(1:7,color="red")%>%
+  footnote(general="Data Source: RIDEM HSC Database")
+```
+
+```{r Gear Table Formatting, echo=FALSE}
+kable(gear_table, "latex", booktabs=T, caption="BAIT HARVEST BY GEAR 2019",align="c")%>%
+  kable_styling(position="center")%>%
+  kable_styling(latex_options = "hold_position")%>%
+  column_spec(1:4,color="red")%>%
+  footnote(general="Harvest method estimated - at time of report 66% of bait landings for 2019 had been reported with gear level information on SAFIS. This information was extrapolated to the total number of crabs reported to RIDEM HSC Database.",threeparttable = T)
+```
+\newpage
+b. Scientific and Research Use 2019
+\newline
+In 2019, 15 scientific collectors' permits were issued which included horseshoe crab collection. Of these permits, 8 were for educational uses and 7 were for aquariums or public display. As of the date of this report, only one annual report was submitted claiming collection of a single horseshoe crab. 
+
+
+c. \textcolor{red}{Biomedical Fishery Performance 2019}
+```{r biomedical data setup, echo=FALSE}
+#Data from ri dem hsc database
+Bio_Table= subset(HSC_land, Year=="2019" & Harvest=="Bio-Med" & Count>="1") 
+Bio_Table= aggregate(Count ~ Month + Sex,FUN=sum, Bio_Table) %>%
+  pivot_wider(names_from = Month,
+              values_from = Count) %>%
+  adorn_totals("row") %>%
+  adorn_totals("col") %>%
+  mutate("Estimated Mortality (14%)"=round(Total*.14))%>% #calculate 14% mortality
+  select(1,2,4,3,5,6)
+
+#data from associates of cape cod
+acc_data = read.csv("acc_bio_2019_final.csv",header=TRUE)
+acc_data=acc_data%>%
+  rename("Bled "="Sum.of.Males.Bled")%>%
+  rename("Dead "="Sum.of.Males.Dead")%>%
+  rename("Rejected"="Sum.of.Males.Rejected.for.Bleeding")%>%
+  rename("Total Received "="Sum.of.Total.Males.Received")%>%
+  rename("Bled"="Sum.of.Females.Bled")%>%
+  rename("Dead"="Sum.of.Females.Dead")%>%
+  rename("Rejected "="Sum.of.Females.Rejected.for.Bleeding")%>%
+  rename("Total Received"="Sum.of.Total.Females.Received")%>%
+  rename("Total Received  "="Sum.of.Total.Crabs.Received")
+acc_data[2,10]=" "
+```
+```{r Biomedical table formatting, echo=FALSE}
+kable(Bio_Table, "latex", booktabs=T, caption="BIOMEDICAL UNITS REPORTED 2019 (COUNT)",align="c")%>%
+  kable_styling(position="center")%>%
+  kable_styling(latex_options = "hold_position")%>%
+  column_spec(1:6,color="red")%>%
+  footnote(general="Data Source: RIDEM HSC Database")
+
+kable(acc_data, "latex", booktabs=T, caption="ASSOCIATES OF CAPE COD REPORT 2019",align="c")%>%
+  kable_styling(position="center")%>%
+  kable_styling(latex_options = "hold_position")%>%
+  column_spec(1:10,color="red")%>%
+  add_header_above(c(" "=1,"Male"=4, "Female"=4))%>%
+  footnote(general="Percent refers to percent of total received. These values will not add up to 100 as values overlap. For example, all crabs bled and rejected are also counted in crabs received",threeparttable = T)
+```
+Explanation of Mortality: 
+\newline
+The number of dead crabs reported by Associates of Cape Cod accounts for 1% of the total 
+\newline
+biomedical crab mortality for 2019. The mortality estimated in Table 3 (14%) represents mortality exhibited by the fishery prior to delivery at the bleeding facility. This percentage was selected as the Atlantic States Marine Fisheries Commission has been operating under the assumption of a 15% horseshoe crab mortality rate for biomedical crabs. 
+\newline
+\newline
+\hspace*{5mm} d. NA
+\newpage
+\hspace*{5mm} e. Fishery Independent Monitoring
+
+```{r Trawl Survey Data length hist, echo=FALSE,fig.width=10,fig.height=5}
+trawl=read.csv("Trawl_Data.csv",header=TRUE)
+#length histogram
+ggplot(trawl, aes(x=Length_CM)) + 
+  geom_histogram(binwidth=.1,aes(color=Sex,fill=Sex))+ theme_bw() +
+  labs(x = "Length in CM", y="Frequency", title="Figure 1: RI DEM Trawl Survey Data 2019")+
+  scale_x_continuous(breaks=c(18:30))+
+  scale_color_manual(values=c("royalblue4", "coral3", "goldenrod3"))+
+  scale_fill_manual(values=c("royalblue1", "coral1", "gold"))+
+  theme(axis.title.x = element_text(size=15))+
+  theme(axis.title.y = element_text(size=15))+
+  theme(axis.text.x = element_text(size=10, face="bold"))+
+  theme(axis.text.y = element_text(size=10, face="bold"))+
+  theme(plot.title=element_text(hjust=.5,size=17))
+```
+\newline
+\newline
+\newline
+```{r Trawl Survey Data weight hist, echo=FALSE,fig.width=10,fig.height=5}
+ggplot(trawl, aes(x=Weight_KG)) + 
+  geom_histogram(binwidth=.05,aes(color=Sex,fill=Sex))+ theme_bw() +
+  labs(x = "Weight in KG", y="Frequency", title="Figure 2: RI DEM Trawl Survey Data 2019")+
+  scale_x_continuous(breaks=c(0,.5,1,1.5,2,2.5,3,3.5,4))+
+  scale_color_manual(values=c("royalblue4", "coral3", "goldenrod3"))+
+  scale_fill_manual(values=c("royalblue1", "coral1", "gold"))+
+  theme(axis.title.x = element_text(size=15))+
+  theme(axis.title.y = element_text(size=15))+
+  theme(axis.text.x = element_text(size=10, face="bold"))+
+  theme(axis.text.y = element_text(size=10, face="bold"))+
+  theme(plot.title=element_text(hjust=.5,size=17))
+```
+\hspace*{5mm} Note: Horseshoe crabs caught on the RI DEM trawl survey are not weighed individually. In cases where a tow caught more than one crab, the aggregated weight of horseshoe crabs for the tow was divided by the total number of crabs caught during that tow. Tows that caught more than one crab account for 35% of all tows that caught any crabs during 2019. For this reason, the weights presented here should all be considered "estimates."
+\newline
+\newline
+```{r Spawning survey data, echo=FALSE,fig.width=10,fig.height=4}
+spawn=read.csv("Spawn_Data_Density.csv",header=TRUE)
+spawn=spawn%>%
+  pivot_longer(cols=c(Nap_Dens,Con_Dens),names_to="Location", values_to="Density")
+
+spawn[spawn=="Nap_Dens"]="Napatree Point"
+spawn[spawn=="Con_Dens"]="Conimicut Point"
+
+ggplot(spawn, aes(Year,Density, color=Location))+ 
+  geom_line(size=2) + theme_bw()+ 
+  labs(x = "Year", y="Horseshoe Crabs/Square Meter", title="Figure 3: RI DEM Spawning Survey", color="")+
+  scale_x_continuous(breaks=c(2000,2002,2004,2006,2008,2010,2012,2014,2016,2018))+
+  theme(axis.title.x = element_text(size=15))+
+  theme(axis.title.y = element_text(size=15))+
+  theme(axis.text.x = element_text(size=10, face="bold"))+
+  theme(axis.text.y = element_text(size=10, face="bold"))+
+  theme(plot.title=element_text(hjust=.5,size=17))
+```
+\hspace*{5mm} f. Juvenile Data
+\newline
+Juveniles are not separated out in any fishery independent sampling programs.
+\newline
+\newline
+**IV. Planned management programs for the current calendar year**
+\newline
+\newline
+\hspace*{5mm} a. In 2018, the RI DEM was granted a State Wildlife Grant to initiate a deeper investigation into Rhode Island's horseshoe crab population. Through collaboration between the Rhode Island Department of Environmental Management’s Division of Marine Fisheries and the University of Rhode Island, this project team aims to assess population structure of horseshoe crabs in Rhode Island and nearby waters using a multidisciplinary approach. The goal of this research is to ascertain whether there are discrete, segregated populations of horseshoe crabs in Rhode Island waters, how different they are from other Southern New England states, and whether there is mixing between spawning contingents. Crabs will be assessed at sites with their associated environmental data collected, have genetic samples taken from the crabs, and released with a tag. Molecular analyses will confirm whether physically segregated crabs are genetically different or unique to the water bodies they inhabit. Phenotypic and environmental data collected for crabs genetically sampled will provide inference on how prospective genetic differences relate to the crabs’ niches. The tagging portion of this project will demonstrate on a more tangible and individualized scale crab mixing rates between water bodies and their degree of site fidelity. The length of this grant is from 2018-2022 during which two years of data collection and tagging will occur. 
+\newline
+\newline
+\hspace*{5mm} b. Monitoring Programs
+\newline
+\newline
+RI DEM Coastal Trawl – Operates year-round on a seasonal and monthly time scale. Seasonal trawls are separated into spring and fall and account for 79-88 annual tows. Monthly trawls take place one week out of every month and account for 107-156 tows annually. This survey captures frequency, weight, width, and sex of horseshoe crabs. 
+\newline
+\newline
+Spawning Beach Survey – Conimicut Point in Warwick, RI and Napatree Point in Westerly, RI are surveyed annually in May during the full moon to monitor beach spawning activity. This survey captures frequency information only (crabs/m sq). 
+\newline
+\newline
+Commercial biosampling - Approximately 100 crabs are sampled from commercial harvesters on an annual basis for morphometric data. The information collected includes gear, width, disposition (bait or biomed), and sex. No biosampling data was collected in 2019
+\newline
+\newline
+**V. No Significant Law Enforcement Issues to Report**
