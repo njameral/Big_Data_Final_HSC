@@ -4,4 +4,4 @@ It should be noted that some data was changed in order to comply with confidenti
 
 To final report is rendered in Rmarkdown using the ".Rmd" file in the report.
 
-All 6 "*.Csv" files are necessary to run the Rmarkedown file
+All 6 "*.csv" files are necessary to run the Rmarkdown file
